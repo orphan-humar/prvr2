@@ -9,7 +9,7 @@ from playwright_stealth import Stealth
 
 # --- ⚙️ BOLD PILLAR SETTINGS ---
 TABS_PER_MACHINE = 2    
-PULSE_DELAY = 100       
+PULSE_DELAY = 400       
 CYCLE_DURATION = 60     
 SESSION_MAX_SEC = 21000 
 sys.stdout.reconfigure(encoding='utf-8')
