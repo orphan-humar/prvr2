@@ -1,6 +1,14 @@
-name: Phoenix V100
+name: Phoenix V100 (5-Machine Matrix)
+
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main  # Autostarts immediately when you upload or edit the code
+
+permissions:
+  actions: write
+  contents: read
 
 jobs:
   run-loop:
@@ -14,23 +22,51 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          # Install Xvfb for the virtual display backend
-          sudo apt-get install -y xvfb
-          pip install playwright playwright-stealth pyvirtualdisplay
+          
+          # Install stable Chrome and Xvfb for the virtual display backend
+          sudo apt-get install -y google-chrome-stable xvfb
+          
+          # Install Python packages combined from both scripts
+          pip install playwright playwright-stealth pyvirtualdisplay httpx requests
           playwright install chromium
+          
+          # Free up runner disk space to prevent Out-Of-Memory crashes
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
 
       - name: 🔥 Run Phoenix Engine
+        timeout-minutes: 300 
         env:
+          PYTHONIOENCODING: utf-8
           INSTA_COOKIE: ${{ secrets.INSTA_COOKIE }}
           TARGET_THREAD_ID: ${{ secrets.TARGET_THREAD_ID }}
+          TARGET_NAME: ${{ secrets.TARGET_NAME }}
           MACHINE_ID: ${{ matrix.machine-id }}
         run: |
-          # Stagger start times to avoid hitting API limits simultaneously
+          # Staggered start to reduce initial load
           DELAY=$(( (MACHINE_ID - 1) * 30 ))
+          echo "Staggering start by $DELAY seconds..."
           sleep $DELAY
-          
-          # Run Python - the script now manages the display internally via pyvirtualdisplay
           python -u main.py
+
+      - name: Trigger Next Run
+        if: ${{ !cancelled() && matrix.machine-id == 1 }}
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          # Wait 5 minutes before restarting
+          sleep 300
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/main.yml/dispatches" \
+            -d '{"ref":"main"}'
