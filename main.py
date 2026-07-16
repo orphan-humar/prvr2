@@ -37,6 +37,11 @@ async def run_name_guardian(sid, tid, sig):
     
     while True:
         try:
+            # Randomized delay: 300 to 600 seconds (5 to 10 minutes)
+            wait_time = random.uniform(300, 600)
+            print(f"⏳ [GUARDIAN] Sleeping for {wait_time:.1f}s before next check...", flush=True)
+            await asyncio.sleep(wait_time)
+            
             resp = session.get(f"https://www.instagram.com/api/v1/direct_v2/threads/{tid}/")
             if resp.status_code == 200:
                 current_title = resp.json().get("thread", {}).get("thread_title")
@@ -53,8 +58,6 @@ async def run_name_guardian(sid, tid, sig):
                     print("🛡️ [GUARDIAN] Thread name is secure.", flush=True)
         except Exception as e: 
             print(f"⚠️ [GUARDIAN] Error checking name: {e}", flush=True)
-        
-        await asyncio.sleep(60)
 
 # --- 🔥 STRIKE ENGINE ---
 async def run_engine(engine_id, sid, url):
@@ -85,10 +88,9 @@ async def run_engine(engine_id, sid, url):
                 msg_count = 0
                 while msg_count < 150: 
                     if msg_count > 0 and msg_count % 30 == 0:
-                        print(f"🔄 [Engine {engine_id}] RELOADING PAGE (Clearing memory & avoiding rate limits)...", flush=True)
+                        print(f"🔄 [Engine {engine_id}] RELOADING PAGE...", flush=True)
                         await page.reload(wait_until='domcontentloaded')
                         msg_box = page.locator('div[role="textbox"], div[aria-label="Message"]').first
-                        print(f"✅ [Engine {engine_id}] Reload complete. Target re-acquired.", flush=True)
                     
                     if random.random() < SIGNATURE_CHANCE:
                         text_to_send = SIGNATURE
@@ -122,7 +124,6 @@ async def main():
     print("🔥 INITIALIZING PHOENIX MATRIX SYSTEM 🔥", flush=True)
     
     tid = url.strip('/').split('/')[-1] if url else ""
-    
     tasks = [run_engine(i+1, sid, url) for i in range(2)]
     
     if tid:
