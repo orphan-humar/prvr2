@@ -60,7 +60,7 @@ async def run_engine(engine_id, sid, url):
             await browser.add_cookies([{"name": "sessionid", "value": sid, "domain": ".instagram.com", "path": "/", "secure": True, "httpOnly": True}])
             page = await browser.new_page()
             
-            # CSS Hiding to prevent lag from incoming messages
+            # CSS Hiding to prevent lag
             await page.add_init_script("""
                 const style = document.createElement('style');
                 style.innerHTML = `
@@ -86,12 +86,10 @@ async def run_engine(engine_id, sid, url):
                         await msg_box.focus()
                         await msg_box.fill(text_to_send) 
                         await page.keyboard.press("Enter")
-                        
-                        gap = random.uniform(2.0, 4.0)
-                        print(f"✅ [Engine {engine_id}] Sent block {i+1}/11. Sleeping {gap:.1f}s", flush=True)
-                        await asyncio.sleep(gap)
+                        print(f"✅ [Engine {engine_id}] Sent block {i+1}/11", flush=True)
                     
-                    await asyncio.sleep(random.uniform(15.0, 30.0))
+                    # Minimal delay between cycles to avoid complete crash
+                    await asyncio.sleep(1)
                     await page.reload(wait_until='domcontentloaded')
                     msg_box = page.locator('div[role="textbox"][contenteditable="true"]').first
                     
