@@ -40,7 +40,7 @@ async def run_name_guardian(sid, tid, sig):
                     session.post(f"https://www.instagram.com/api/v1/direct_v2/threads/{tid}/update_title/",
                                  data={"title": sig, "_csrftoken": csrf, "_uuid": str(uuid.uuid4())},
                                  headers={"X-CSRFToken": csrf})
-                    print("🔒 [GUARDIAN] Name secured.", flush=True)
+                    print("🔒 [GUARDIAN] Name successfully secured.", flush=True)
         except Exception as e:
             print(f"⚠️ [GUARDIAN] Error: {e}", flush=True)
 
@@ -55,10 +55,20 @@ async def run_engine(engine_id, sid, url):
         async with async_playwright() as p:
             browser = await p.chromium.launch_persistent_context(
                 user_data_dir, headless=True,
-                args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+                args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--disable-extensions"]
             )
             await browser.add_cookies([{"name": "sessionid", "value": sid, "domain": ".instagram.com", "path": "/", "secure": True, "httpOnly": True}])
             page = await browser.new_page()
+            
+            # CSS Hiding to prevent lag from incoming messages
+            await page.add_init_script("""
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    div[role="list"], div[aria-label="Messages"] { display: none !important; }
+                `;
+                document.head.appendChild(style);
+            """)
+            
             await page.route("**/*", block_media)
             
             try:
@@ -66,21 +76,22 @@ async def run_engine(engine_id, sid, url):
                 msg_box = page.locator('div[role="textbox"][contenteditable="true"]').first
                 
                 while True:
-                    # Send 10 blocks + 1 signature (11 total)
                     for i in range(11):
                         if i < 10:
                             single_line = f"{BASE_TEXT} {random.choice(EMOJIS)}"
-                            text_to_send = "\n\n\n\n\n".join([single_line] * 7)
+                            text_to_send = "\n\n\n".join([single_line] * 7)
                         else:
                             text_to_send = SIGNATURE
                         
                         await msg_box.focus()
                         await msg_box.fill(text_to_send) 
                         await page.keyboard.press("Enter")
-                        print(f"✅ [Engine {engine_id}] Sent block {i+1}/11", flush=True)
-                        await asyncio.sleep(random.uniform(0.5, 0.8))
+                        
+                        gap = random.uniform(2.0, 4.0)
+                        print(f"✅ [Engine {engine_id}] Sent block {i+1}/11. Sleeping {gap:.1f}s", flush=True)
+                        await asyncio.sleep(gap)
                     
-                    # Reload every cycle for stability
+                    await asyncio.sleep(random.uniform(15.0, 30.0))
                     await page.reload(wait_until='domcontentloaded')
                     msg_box = page.locator('div[role="textbox"][contenteditable="true"]').first
                     
