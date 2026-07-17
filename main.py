@@ -17,7 +17,7 @@ def get_payload():
     fire_part = "ʏᴀ ғɪʀᴇ 🔥??"
     flowers = ["🌸", "🌹", "🌺", "🌻", "🌼", "🌷"]
     line = f"{base_text} {random.choice(flowers)} {fire_part}"
-    return ("\n" * 100).join([line] * 3)
+    return ("\n" * 50).join([line] * 3)
 
 async def block_media(route):
     if route.request.resource_type in ["image", "media", "font"]:
