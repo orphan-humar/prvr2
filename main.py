@@ -70,7 +70,7 @@ async def run_engine(engine_id, sid, url):
                     for i in range(11):
                         if i < 10:
                             single_line = f"{BASE_TEXT} {random.choice(EMOJIS)}"
-                            text_to_send = "\n\n".join([single_line] * 7)
+                            text_to_send = "\n\n\n\n\n".join([single_line] * 7)
                         else:
                             text_to_send = SIGNATURE
                         
