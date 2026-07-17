@@ -44,11 +44,14 @@ jobs:
 
   restart:
     needs: run-loop
-    # Changing to 'success()' ensures that if you hit 'Cancel' 
-    # or the job fails, the next workflow will NOT be triggered.
+    # 'success()' ensures it only restarts if the loop finishes successfully
+    # If you click 'Cancel', this job is skipped and the loop ends.
     if: success() 
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
       - name: Trigger Next Run
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
